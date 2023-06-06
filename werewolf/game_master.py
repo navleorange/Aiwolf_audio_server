@@ -218,9 +218,16 @@ class GameMaster:
 
     def vote(self, player:Player, lock:threading.Lock) -> None:
         # set game setting after reset
+
         player.inform_info.reset_values()
-        player.inform_info.update_vote_index_list(vote_index_list=self.get_vote_index(player=player))
-        player.inform_info.update_vote_name_list(vote_name_list=self.get_vote_name(player=player))
+        if self.player_num != 1:
+            player.inform_info.update_vote_index_list(vote_index_list=self.get_vote_index(player=player))
+            player.inform_info.update_vote_name_list(vote_name_list=self.get_vote_name(player=player))
+        else:
+            # this use only test
+            player.inform_info.update_vote_index_list(vote_index_list=[98,99,100])
+            player.inform_info.update_vote_name_list(vote_name_list=["a","b","c"])
+
         player.inform_info.update_human_message(message=messages.vote.format(player_list=self.get_vote_str(player=player)))
         player.inform_info.update_request(request=player.inform_info.request_class.vote)
 
