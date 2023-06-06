@@ -198,8 +198,18 @@ class GameMaster:
         attack_list = [str(alive_player) for alive_player in self.alive_list if self.get_player_role(alive_player) != self.role_info.werewolf]
         return ",".join(attack_list)
     
-    def get_vote_list(self, player:Player) -> str:
-        vote_list = [str(alive_player) for alive_player in self.alive_list if alive_player != player.index]
+    def get_vote_index(self, player:Player) -> list:
+        vote_list = [alive_player for alive_player in self.alive_list if alive_player != player.index]
+        return vote_list
+    
+    def get_vote_name(self, player:Player) -> list:
+        vote_list = self.get_vote_index(player=player)
+        vote_name = [self.get_player_name(index=index) for index in vote_list]
+        return vote_name
+    
+    def get_vote_str(self, player:Player) -> str:
+        vote_list = self.get_vote_index(player=player)
+        vote_list = list(map(str,vote_list))
         return ",".join(vote_list)
     
     def get_alive_string(self) -> str:
@@ -209,11 +219,21 @@ class GameMaster:
     def vote(self, player:Player, lock:threading.Lock) -> None:
         # set game setting after reset
         player.inform_info.reset_values()
-        player.inform_info.update_human_message(message=messages.vote.format(player_list=self.get_vote_list(player=player)))
+        player.inform_info.update_vote_index_list(vote_index_list=self.get_vote_index(player=player))
+        player.inform_info.update_vote_name_list(vote_name_list=self.get_vote_name(player=player))
+        player.inform_info.update_human_message(message=messages.vote.format(player_list=self.get_vote_str(player=player)))
         player.inform_info.update_request(request=player.inform_info.request_class.vote)
 
         # send
         response_index = self.conversation_inform(player=player)
+
+        # throw out audio
+        while response_index["request"] == player.inform_info.request_class.convert_server_format(request=player.inform_info.request_class.convert_audio):
+            # resend
+            response_index = self.conversation_inform(player=player)
+            print(response_index)
+        
+        print(response_index)
         response_index = int(response_index["agent_info"]["message"])
 
         with lock:

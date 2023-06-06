@@ -57,3 +57,5 @@ morning_cruel = """
 おはようございます。
 今朝起きると、{player_name:s}さんが無残な姿で倒れていました...
 """ + confirm
+
+time_out = "time out..."

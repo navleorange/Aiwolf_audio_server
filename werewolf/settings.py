@@ -97,6 +97,10 @@ class GameInfo:
 		self.voteList = "voteList"
 		self.gameSetting = "gameSetting"
 
+		# add info
+		self.vote_index_list = "voteIndexList"
+		self.vote_name_list = "voteNameList"
+
 		# RandomTalkAgent format (just init)
 		self._random_gameInfo_format = {self.agent:None,self.attackVoteList:None,self.attackedAgent:None,self.cursedFox:None,self.day:None,self.divineResult:None,
 				  self.englishTalkList:None,self.executedAgent:None,self.existingRoleList:None,self.guardedAgent:None,self.lastDeadAgentList:None,self.latestAttackVoteList:None,
@@ -104,7 +108,7 @@ class GameInfo:
 				  self.role:None,self.statusMap:None,self.talkList:None,self.voteList:None,self.gameSetting:None}
 
 		# add format (just init)
-		self._add_gameInfo_format = dict()
+		self._add_gameInfo_format = {self.vote_index_list:None,self.vote_name_list:None}
 
 	def get_gameInfo_format(self) -> dict:
 		self._random_gameInfo_format.update(self._add_gameInfo_format)
@@ -253,6 +257,14 @@ class Inform:
 		self.check_gameInfo_value()
 		self.gameInfo_value[self.gameInfo_class.role] = role
 	
+	def update_vote_index_list(self, vote_index_list:list) -> None:
+		self.check_gameInfo_value()
+		self.gameInfo_value[self.gameInfo_class.vote_index_list] = vote_index_list
+	
+	def update_vote_name_list(self, vote_name_list:list) -> None:
+		self.check_gameInfo_value()
+		self.gameInfo_value[self.gameInfo_class.vote_name_list] = vote_name_list
+
 	def update_talk(self, daily_time_limit:int, connection_interval:int) -> None:
 		self.update_daily_time_limit(daily_time_limit=daily_time_limit)
 		self.update_connection_interval(connection_interval=connection_interval)
