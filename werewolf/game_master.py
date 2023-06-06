@@ -106,13 +106,13 @@ class GameMaster:
         player.inform_info.update_daily_time_limit(daily_time_limit=self.daily_time_limit)
         player.inform_info.update_seed(seed=self.seed)
         player.inform_info.update_connection_interval(connection_interval=self.connection_interval)
-        inform_rule = f"""-------------------ルール説明-------------------\n今回のゲームのルールは以下のようになっています。\n役職：{list(self.all_role_ja.keys())}\n1日の会話時間:{self.daily_time_limit}秒"""
+        inform_rule = f"""---------------------------ルール説明---------------------------\n今回のゲームのルールは以下のようになっています。\n役職：{list(self.all_role_ja.keys())}\n1日の会話時間:{self.daily_time_limit}秒"""
         player.inform_info.update_human_message(message=inform_rule)
 
         # set request
         player.inform_info.update_request(request=player.inform_info.request_class.inform_check)
         # send game setting information
-        self.send_inform(player=player)
+        _ = self.conversation_inform(player=player)
 
         # reset inform info
         player.inform_info.reset_values()
