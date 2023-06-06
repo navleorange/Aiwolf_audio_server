@@ -110,7 +110,7 @@ class GameMaster:
         player.inform_info.update_human_message(message=inform_rule)
 
         # set request
-        player.inform_info.update_request(request=player.inform_info.request_class.inform)
+        player.inform_info.update_request(request=player.inform_info.request_class.inform_check)
         # send game setting information
         self.send_inform(player=player)
 
