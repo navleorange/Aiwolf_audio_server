@@ -97,7 +97,7 @@ def main():
 			futures = [executor.submit(aiwolf_admin.vote_inform, player, target) for player in player_list]
 			_ = [future.result() for future in concurrent.futures.as_completed(futures)]
 		
-		if not aiwolf_admin.check_game_state():
+		if not aiwolf_admin.check_game_continue():
 			aiwolf_admin.game_continue = False
 			break
 		
@@ -116,8 +116,8 @@ def main():
 
 	print("finish")
 	with concurrent.futures.ThreadPoolExecutor(max_workers=aiwolf_admin.player_num) as executor:
-		for player in player_list:
-			future = executor.submit(aiwolf_admin.finish_game, player)
+		futures = [executor.submit(aiwolf_admin.finish_game, player) for player in player_list]
+		_ = [future.result() for future in concurrent.futures.as_completed(futures)]
 	
 	aiwolf_admin.connection.close()
 

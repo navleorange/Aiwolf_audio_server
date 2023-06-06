@@ -8,6 +8,10 @@ class Role():
 		self.werewolf = "werewolf"
 		self.possessed = "possessed"
 
+		# team
+		self.villager_team = [self.villager, self.seer, self.medium, self.guard]
+		self.werewolf_team = [self.werewolf, self.possessed]
+
 		self.role_list = [self.villager,self.seer,self.medium,self.guard,self.werewolf,self.possessed]
 		self.role_translate = {self.villager:"村人",self.seer:"占い師",self.medium:"霊能者",self.guard:"狩人",self.werewolf:"人狼",self.possessed:"狂人"}
 	

@@ -40,10 +40,12 @@ class GameMaster:
         self.vote_result = {}
         self.attacked = None    # store sttacked agent index
         self.game_continue = True
+        self.villager_win = False
+        self.werewolf_win = False
 
         # load
         self.all_role = {role:inifile.getint("game",role) for role in self.role_info.role_list if inifile.getint("game",role) != 0}
-        util.check_role(inifile=self.inifile, role_list=self.all_role)
+        util.check_role(inifile=self.inifile, all_role=self.all_role)
         self.allocate_role_list = self.all_role.copy()
         self.all_role_ja = {self.role_info.translate_ja(role=role):self.all_role[role] for role in self.all_role.keys()}
 
@@ -232,16 +234,14 @@ class GameMaster:
         player.inform_info.update_request(request=player.inform_info.request_class.vote)
 
         # send
-        response_index = self.conversation_inform(player=player)
+        response_name = self.conversation_inform(player=player)
 
         # throw out audio
-        while response_index["request"] == player.inform_info.request_class.convert_server_format(request=player.inform_info.request_class.convert_audio):
+        while response_name["request"] == player.inform_info.request_class.convert_server_format(request=player.inform_info.request_class.convert_audio):
             # resend
-            response_index = self.conversation_inform(player=player)
-            print(response_index)
-        
-        print(response_index)
-        response_index = int(response_index["agent_info"]["message"])
+            response_name = self.conversation_inform(player=player)
+
+        response_index = self.get_player_index(name=response_name["agent_info"]["message"])
 
         with lock:
             self.vote_result.setdefault(response_index,0)
@@ -280,10 +280,8 @@ class GameMaster:
 
         if target == player.name:
             # update information
-            hanged_player = self.get_player_index(name=target)
-
-            self.alive_list.remove(hanged_player)
-            self.dead_list.append(hanged_player)
+            self.alive_list.remove(player.index)
+            self.dead_list.append(player.index)
             _ = self.player_role.pop(player.index,None)
 
             player.dead()
@@ -339,14 +337,23 @@ class GameMaster:
 
         _ = self.conversation_inform(player=player)
 
-    def check_game_state(self) -> bool:
-        role_list = list(self.player_role.values())
+    def check_game_continue(self) -> bool:
+        werewolf_team = 0
 
-        werewolf_team = role_list.count(self.role_info.werewolf)
+        for player in self.alive_list:
+            player_role = self.get_player_role(index=player)
 
-        if werewolf_team >= len(role_list) or werewolf_team == 0:
+            if player_role in self.role_info.werewolf_team:
+                werewolf_team += 1
+
+        if werewolf_team >= len(self.alive_list)/2:
+            self.werewolf_win = True
             return False
         
+        if werewolf_team == 0:
+            self.villager_win = True
+            return False
+
         return True
     
     def update_game_state(self) -> None:
@@ -358,8 +365,8 @@ class GameMaster:
 
         # set request
         player.inform_info.update_request(request=player.inform_info.request_class.finish)
-        
-        player.send_inform(socket=player.socket, address=player.address)
+
+        self.send_inform(player=player)
 
     def send_inform(self, player:Player) -> None:
         # update inform_fomat
