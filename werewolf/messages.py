@@ -5,7 +5,7 @@ inform_rule = """
                 1日の会話時間:{daily_time_limit:d}秒
             """
 
-confirm = "確認したら「ok」と入力してください"
+confirm = "確認したら「OK」ボタンを押してください。"
 
 waiting_confirm = "他のプレイヤーの確認を待っています..."
 

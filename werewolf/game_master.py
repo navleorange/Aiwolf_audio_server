@@ -112,8 +112,7 @@ class GameMaster:
         # set request
         player.inform_info.update_request(request=player.inform_info.request_class.inform_check)
         # send game setting information
-        data= self.conversation_inform(player=player)
-        print(data)
+        _ = self.conversation_inform(player=player)
 
         # reset inform info
         player.inform_info.reset_values()
@@ -126,8 +125,7 @@ class GameMaster:
 
             player.inform_info.update_request(request=player.inform_info.request_class.role)
             
-            data = self.conversation_inform(player=player)
-            print(data)
+            _ = self.conversation_inform(player=player)
             
             message = f"他のプレイヤーの確認を待っています...\n"
             player.inform_info.update_human_message(message=message)
