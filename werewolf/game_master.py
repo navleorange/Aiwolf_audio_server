@@ -38,7 +38,8 @@ class GameMaster:
         self.alive_list = []    # alive player index
         self.dead_list = []     # dead player index
         self.vote_result = {}
-        self.attacked = None    # store sttacked agent index
+        self.attacked_latest = None    # store sttacked agent index
+        self.hanged_latest = None   # store hanged agent index
         self.game_continue = True
         self.villager_win = False
         self.werewolf_win = False
@@ -189,16 +190,29 @@ class GameMaster:
         result = [player_index for player_index, player_name in self.player_map.items() if player_name == name]
         return result[0]
 
-    def get_divine_list(self, player:Player) -> str:
-        divine_list = [str(alive_player) for alive_player in self.alive_list if player.index != alive_player]
-        return ",".join(divine_list)
+    def get_divine_index(self, player:Player) -> list:
+        divine_list = [alive_player for alive_player in self.alive_list if player.index != alive_player]
+        return divine_list
+    
+    def get_divine_name(self, player:Player) -> list:
+        divine_list = self.get_divine_index(player=player)
+        divine_name = [self.get_player_name(index=index) for index in divine_list]
+        return divine_name
     
     def get_divine_result(self, index:int) -> str:
-        return "白" if self.get_player_role(index=index) != self.role_info.werewolf else "黒"
+        return "白" if not self.get_player_role(index=index) in self.role_info.divine_werewolf else "黒"
     
-    def get_attack_list(self, player:Player) -> str:
-        attack_list = [str(alive_player) for alive_player in self.alive_list if self.get_player_role(alive_player) != self.role_info.werewolf]
-        return ",".join(attack_list)
+    def get_psychic_result(self) -> str:
+        return "白" if not self.get_player_role(index=self.hanged_latest) in self.role_info.divine_werewolf else "黒"
+    
+    def get_attack_index(self, player:Player) -> list:
+        attack_list = [alive_player for alive_player in self.alive_list if self.get_player_role(alive_player) != self.role_info.werewolf]
+        return attack_list
+    
+    def get_attack_name(self, player:Player) -> list:
+        attack_list = self.get_attack_index(player=player)
+        attack_name = [self.get_player_name(index=index) for index in attack_list]
+        return attack_name
     
     def get_vote_index(self, player:Player) -> list:
         vote_list = [alive_player for alive_player in self.alive_list if alive_player != player.index]
@@ -214,21 +228,21 @@ class GameMaster:
         vote_list = list(map(str,vote_list))
         return ",".join(vote_list)
     
-    def get_alive_string(self) -> str:
-        alive_str = map(str,self.alive_list)
-        return ",".join(alive_str)
+    def get_alive_name(self) -> list:
+        alive_name = [self.get_player_name(index=index) for index in self.alive_list]
+        return alive_name
 
     def vote(self, player:Player, lock:threading.Lock) -> None:
         # set game setting after reset
 
         player.inform_info.reset_values()
         if self.player_num != 1:
-            player.inform_info.update_vote_index_list(vote_index_list=self.get_vote_index(player=player))
-            player.inform_info.update_vote_name_list(vote_name_list=self.get_vote_name(player=player))
+            player.inform_info.update_target_index_list(target_index_list=self.get_vote_index(player=player))
+            player.inform_info.update_target_name_list(target_name_list=self.get_vote_name(player=player))
         else:
             # this use only test
-            player.inform_info.update_vote_index_list(vote_index_list=[98,99,100])
-            player.inform_info.update_vote_name_list(vote_name_list=["a","b","c"])
+            player.inform_info.update_target_index_list(target_index_list=[98,99,100])
+            player.inform_info.update_target_name_list(target_name_list=["a","b","c"])
 
         player.inform_info.update_human_message(message=messages.vote.format(player_list=self.get_vote_str(player=player)))
         player.inform_info.update_request(request=player.inform_info.request_class.vote)
@@ -282,29 +296,54 @@ class GameMaster:
             # update information
             self.alive_list.remove(player.index)
             self.dead_list.append(player.index)
-            _ = self.player_role.pop(player.index,None)
+            self.hanged_latest = player.index
 
             player.dead()
     
     def unique_action(self, player:Player) -> None:
         # set game setting after reset
         player.inform_info.reset_values()
-        player.inform_info.update_request(request=player.inform_info.request_class.inform_check)
+        role_message = ""
 
         if player.role == self.role_info.seer:
-            player.inform_info.update_human_message(message=messages.divine_seer.format(player_list=self.get_divine_list(player=player)))
+            player.inform_info.update_target_index_list(target_index_list=self.get_divine_index(player=player))
+            player.inform_info.update_target_name_list(target_name_list=self.get_divine_name(player=player))
+            player.inform_info.update_request(request=player.inform_info.request_class.divine)
+            role_message = messages.night + messages.divine_seer
         elif player.role == self.role_info.werewolf:
-            player.inform_info.update_human_message(message=messages.attack_werewolf.format(player_list=self.get_attack_list(player=player)))
+            player.inform_info.update_target_index_list(target_index_list=self.get_attack_index(player=player))
+            player.inform_info.update_target_name_list(target_name_list=self.get_attack_name(player=player))
+            player.inform_info.update_request(request=player.inform_info.request_class.attack)
+            role_message = messages.night + messages.attack_werewolf
+        elif player.role == self.role_info.medium:
+            role_message = messages.night + messages.psychic_medium.format(player_name=self.get_player_name(index=self.hanged_latest, psychic_result=self.get_psychic_result()))
+            player.inform_info.update_request(request=player.inform_info.request_class.psychic)
+        elif player.role == self.role_info.guard:
+            player.inform_info.update_target_index_list(target_index_list=self.get_attack_index(player=player))
+            player.inform_info.update_target_name_list(target_name_list=self.get_attack_name(player=player))
+            role_message = messages.night + messages.guard_guard
+            player.inform_info.update_request(request=player.inform_info.request_class.guard)
         else:
-            player.inform_info.update_human_message(message=messages.camouflage_villager.format(player_list=self.get_alive_string())) # camouflage
+            player.inform_info.update_target_index_list(target_index_list=self.alive_list)
+            player.inform_info.update_target_name_list(target_name_list=self.get_alive_name())
+            role_message = messages.night + messages.camouflage_villager
+            player.inform_info.update_request(request=player.inform_info.request_class.divine_lie)
         
         # send
-        response = self.conversation_inform(player=player)
-        response_index = int(self.get_message(response=response))
+        player.inform_info.update_human_message(message=role_message)
+        response_name = self.conversation_inform(player=player)
+        response_index = self.get_player_index(name=response_name["agent_info"]["message"])
+
+        player.inform_info.update_request(request=player.inform_info.request_class.inform_check)
 
         if player.role == self.role_info.seer:
             player.inform_info.update_human_message(message=messages.divine_result.format(player_name=self.get_player_name(index=response_index), role=self.get_divine_result(index=response_index)))
         elif player.role == self.role_info.werewolf:
+            self.attacked_latest = response_index
+            # update information
+            self.alive_list.remove(response_index)
+            self.dead_list.append(response_index)
+
             player.inform_info.update_human_message(message=messages.camouflage_check)
         else:
             player.inform_info.update_human_message(message=messages.camouflage_check)
@@ -328,10 +367,14 @@ class GameMaster:
         # infrom attackd player
         player.inform_info.reset_values()
 
-        if self.attacked == None:
+        if self.attacked_latest == None:
             player.inform_info.update_human_message(message=messages.morning_safe)
         else:
-            player.inform_info.update_human_message(message=messages.morning_cruel.format(player_name=self.get_player_name(index=self.attacked)))
+            player.inform_info.update_human_message(message=messages.morning_cruel.format(player_name=self.get_player_name(index=self.attacked_latest)))
+
+            # update information
+            if player.index == self.attacked_latest:
+                player.dead()
 
         player.inform_info.update_request(request=player.inform_info.request_class.inform_check)
 
@@ -339,25 +382,29 @@ class GameMaster:
 
     def check_game_continue(self) -> bool:
         werewolf_team = 0
+        werewolf_cnt = 0
 
         for player in self.alive_list:
             player_role = self.get_player_role(index=player)
 
             if player_role in self.role_info.werewolf_team:
                 werewolf_team += 1
+            
+            if player_role == self.role_info.werewolf:
+                werewolf_cnt += 1
 
         if werewolf_team >= len(self.alive_list)/2:
             self.werewolf_win = True
             return False
         
-        if werewolf_team == 0:
+        if werewolf_cnt == 0:
             self.villager_win = True
             return False
 
         return True
     
     def update_game_state(self) -> None:
-        self.game_continue = self.check_game_state()
+        self.game_continue = self.check_game_continue()
 
     def finish_game(self, player:Player) -> None:
         # reset inform info

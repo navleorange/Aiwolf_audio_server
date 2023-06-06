@@ -12,6 +12,10 @@ class Role():
 		self.villager_team = [self.villager, self.seer, self.medium, self.guard]
 		self.werewolf_team = [self.werewolf, self.possessed]
 
+		# divine result
+		self.divine_villager = [self.villager, self.seer, self.medium, self.guard, self.possessed]
+		self.divine_werewolf = [self.werewolf]
+
 		self.role_list = [self.villager,self.seer,self.medium,self.guard,self.werewolf,self.possessed]
 		self.role_translate = {self.villager:"村人",self.seer:"占い師",self.medium:"霊能者",self.guard:"狩人",self.werewolf:"人狼",self.possessed:"狂人"}
 	
@@ -36,6 +40,13 @@ class Request:
 		self.whisper = "whisper"
 		self.finish = "finish"
 
+		# unique action
+		self.attack = "attck"
+		self.divine = "divine"
+		self.divine_lie = "divine_lie"
+		self.psychic = "psychic"	# medium use this
+		self.guard = "guard"
+
 		# add request
 		self.inform = "inform"	# not need player check
 		self.inform_check = "inform_check"	# need player check
@@ -47,9 +58,8 @@ class Request:
 
 		# {key:self variable value:RandomTalkAgent send format}
 		self.convert_request = {self.initialize:"INITIALIZE",self.name:"NAME",self.role:"ROLE",self.daily_initialize:"DAILY_INITIALIZE",self.daily_finish:"DAILY_FINISH",self.talk:"TALK",self.vote:"VOTE",self.whisper:"WHISPER",self.finish:"FINISH",
-			  					self.inform:"INFORM", self.time_sync:"TIME_SYNCHRONIZE", self.base_info:"BASEINFO", self.inform_check:"INFORMCHECK",self.convert_audio:"CONVERTAUDIO"
-								}
-
+			  					self.inform:"INFORM", self.time_sync:"TIME_SYNCHRONIZE", self.base_info:"BASEINFO", self.inform_check:"INFORMCHECK",self.convert_audio:"CONVERTAUDIO",
+								self.attack:"ATTACK", self.divine:"DIVINE", self.divine_lie:"DIVINELIE", self.psychic:"PSYCHIC", self.guard:"GUARD"}
 
 		# RandomTalkAgent format (just init)
 		self._random_request = dict()
@@ -102,8 +112,8 @@ class GameInfo:
 		self.gameSetting = "gameSetting"
 
 		# add info
-		self.vote_index_list = "voteIndexList"
-		self.vote_name_list = "voteNameList"
+		self.target_index_list = "targetIndexList"
+		self.target_name_list = "targetNameList"
 
 		# RandomTalkAgent format (just init)
 		self._random_gameInfo_format = {self.agent:None,self.attackVoteList:None,self.attackedAgent:None,self.cursedFox:None,self.day:None,self.divineResult:None,
@@ -112,7 +122,7 @@ class GameInfo:
 				  self.role:None,self.statusMap:None,self.talkList:None,self.voteList:None,self.gameSetting:None}
 
 		# add format (just init)
-		self._add_gameInfo_format = {self.vote_index_list:None,self.vote_name_list:None}
+		self._add_gameInfo_format = {self.target_index_list:None,self.target_name_list:None}
 
 	def get_gameInfo_format(self) -> dict:
 		self._random_gameInfo_format.update(self._add_gameInfo_format)
@@ -261,13 +271,13 @@ class Inform:
 		self.check_gameInfo_value()
 		self.gameInfo_value[self.gameInfo_class.role] = role
 	
-	def update_vote_index_list(self, vote_index_list:list) -> None:
+	def update_target_index_list(self,target_index_list:list) -> None:
 		self.check_gameInfo_value()
-		self.gameInfo_value[self.gameInfo_class.vote_index_list] = vote_index_list
+		self.gameInfo_value[self.gameInfo_class.target_index_list] = target_index_list
 	
-	def update_vote_name_list(self, vote_name_list:list) -> None:
+	def update_target_name_list(self, target_name_list:list) -> None:
 		self.check_gameInfo_value()
-		self.gameInfo_value[self.gameInfo_class.vote_name_list] = vote_name_list
+		self.gameInfo_value[self.gameInfo_class.target_name_list] = target_name_list
 
 	def update_talk(self, daily_time_limit:int, connection_interval:int) -> None:
 		self.update_daily_time_limit(daily_time_limit=daily_time_limit)
