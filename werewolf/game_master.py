@@ -75,7 +75,7 @@ class GameMaster:
         self.alive_list.append(new_player.index)
 
         if new_player.human_flag:
-            message = f"他のプレイヤーの接続を待っています..."
+            message = f"他のプレイヤーの接続を待っています...\n"
             new_player.inform_info.update_human_message(message=message)
             new_player.inform_info.update_request(request=new_player.inform_info.request_class.inform)
             self.send_inform(player=new_player)
@@ -112,7 +112,8 @@ class GameMaster:
         # set request
         player.inform_info.update_request(request=player.inform_info.request_class.inform_check)
         # send game setting information
-        _ = self.conversation_inform(player=player)
+        data= self.conversation_inform(player=player)
+        print(data)
 
         # reset inform info
         player.inform_info.reset_values()
@@ -124,14 +125,11 @@ class GameMaster:
             player.inform_info.update_human_message(message=messages.inform_role.format(role=self.role_info.translate_ja(role=player.role)))
 
             player.inform_info.update_request(request=player.inform_info.request_class.role)
-
-            self.print_info(player=player)
             
             data = self.conversation_inform(player=player)
-            
             print(data)
             
-            message = f"他のプレイヤーの確認を待っています..."
+            message = f"他のプレイヤーの確認を待っています...\n"
             player.inform_info.update_human_message(message=message)
             player.inform_info.update_request(request=player.inform_info.request_class.inform)
 

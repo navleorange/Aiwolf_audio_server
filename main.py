@@ -8,7 +8,6 @@ from lib import (
     server
 )
 from werewolf import game_master
-from typing import Tuple
 import json
 import os
 
@@ -16,7 +15,7 @@ def gpu() -> None:
 	os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 	os.environ["CUDA_VISIBLE_DEVICES"] = "5"
 
-def game_prepare() -> Tuple[configparser.ConfigParser, game_master.GameMaster]:
+def game_prepare() -> game_master.GameMaster:
 	# read config.ini
 	config_path = "./res/config.ini"
 	inifile = util.check_config(config_path=config_path)
@@ -30,13 +29,13 @@ def game_prepare() -> Tuple[configparser.ConfigParser, game_master.GameMaster]:
 	# init thread
 	util.check_max_thread(inifile.getint("game","player_num"))
 
-	return inifile, aiwolf_admin
+	return aiwolf_admin
 
 def main():
 	gpu()
 
 	# load or init 
-	inifile, aiwolf_admin = game_prepare()
+	aiwolf_admin = game_prepare()
 
 	# execute game
 	lock = threading.Lock()
@@ -45,30 +44,26 @@ def main():
 	# connectino with player
 	print("server listening...")
 	with concurrent.futures.ThreadPoolExecutor(max_workers=aiwolf_admin.player_num) as executor:
-		for _ in range(aiwolf_admin.player_num):
-			future = executor.submit(aiwolf_admin.accept_entry, lock)
-			player_list.append(future.result())
+		futures = [executor.submit(aiwolf_admin.accept_entry, lock) for _ in range(aiwolf_admin.player_num)]
+		player_list = [future.result() for future in concurrent.futures.as_completed(futures)]
 	
 	print("allocate")
 	# allocate_role
 	with concurrent.futures.ThreadPoolExecutor(max_workers=aiwolf_admin.player_num) as executor:
-		for player in player_list:
-			future = executor.submit(aiwolf_admin.allocate_role, player, lock)
-			#print(future.result())
+		futures = [executor.submit(aiwolf_admin.allocate_role, player, lock) for player in player_list]
+		_ = [future.result() for future in concurrent.futures.as_completed(futures)]
 	
 	print("inform")
 	# inform_game_setting
 	with concurrent.futures.ThreadPoolExecutor(max_workers=aiwolf_admin.player_num) as executor:
-		for player in player_list:
-			future = executor.submit(aiwolf_admin.inform_game_setting, player)
-			#print(future.result())
+		futures = [executor.submit(aiwolf_admin.inform_game_setting, player) for player in player_list]
+		_ = [future.result() for future in concurrent.futures.as_completed(futures)]
 	
 	print("count_down")
 	# inform_game_setting
 	with concurrent.futures.ThreadPoolExecutor(max_workers=aiwolf_admin.player_num) as executor:
-		for player in player_list:
-			future = executor.submit(aiwolf_admin.count_down, player)
-			#print(future.result())
+		futures = [executor.submit(aiwolf_admin.count_down, player) for player in player_list]
+		_ = [future.result() for future in concurrent.futures.as_completed(futures)]
 	
 	# game loop
 	while aiwolf_admin.game_continue:
@@ -76,10 +71,8 @@ def main():
 		end_time = start_time + aiwolf_admin.daily_time_limit
 
 		with concurrent.futures.ThreadPoolExecutor(max_workers=aiwolf_admin.player_num) as executor:
-			for player in player_list:
-				future = executor.submit(aiwolf_admin.provide_talk_info, player)
-				print(future.result())
-			pass
+			futures = [executor.submit(aiwolf_admin.provide_talk_info, player) for player in player_list]
+			_ = [future.result() for future in concurrent.futures.as_completed(futures)]
 
 		while time.time() < end_time:
 
