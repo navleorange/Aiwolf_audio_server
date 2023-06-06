@@ -9,7 +9,7 @@ class Role():
 		self.possessed = "possessed"
 
 		self.role_list = [self.villager,self.seer,self.medium,self.guard,self.werewolf,self.possessed]
-		self.role_translate = {self.villager:"村人",self.seer:"占い師",self.guard:"狩人",self.werewolf:"人狼",self.possessed:"狂人"}
+		self.role_translate = {self.villager:"村人",self.seer:"占い師",self.medium:"霊能者",self.guard:"狩人",self.werewolf:"人狼",self.possessed:"狂人"}
 	
 	def translate_ja(self, role:str) -> str:
 
@@ -91,13 +91,17 @@ class GameInfo:
 		self.remainTalkMap = "remainTalkMap"
 		self.remainWhisperMap = "remainWhisperMap"
 		self.roleMap = "roleMap"
+		self.role = "role"
 		self.statusMap = "statusMap"
 		self.talkList = "talkList"
 		self.voteList = "voteList"
 		self.gameSetting = "gameSetting"
 
 		# RandomTalkAgent format (just init)
-		self._random_gameInfo_format = {self.agent:None,self.attackVoteList:None,self.attackedAgent:None,self.cursedFox:None,self.day:None,self.divineResult:None,self.englishTalkList:None,self.executedAgent:None,self.existingRoleList:None,self.guardedAgent:None,self.lastDeadAgentList:None,self.latestAttackVoteList:None,self.latestExecutedAgent:None,self.latestVoteList:None,self.mediumResult:None,self.remainTalkMap:None,self.remainWhisperMap:None,self.roleMap:None,self.statusMap:None,self.talkList:None,self.voteList:None,self.gameSetting:None}
+		self._random_gameInfo_format = {self.agent:None,self.attackVoteList:None,self.attackedAgent:None,self.cursedFox:None,self.day:None,self.divineResult:None,
+				  self.englishTalkList:None,self.executedAgent:None,self.existingRoleList:None,self.guardedAgent:None,self.lastDeadAgentList:None,self.latestAttackVoteList:None,
+				  self.latestExecutedAgent:None,self.latestVoteList:None,self.mediumResult:None,self.remainTalkMap:None,self.remainWhisperMap:None,self.roleMap:None,
+				  self.role:None,self.statusMap:None,self.talkList:None,self.voteList:None,self.gameSetting:None}
 
 		# add format (just init)
 		self._add_gameInfo_format = dict()
@@ -232,7 +236,7 @@ class Inform:
 		self.gameSetting_value[self.gameSetting_class.roleNumMap] = role_num_map
 
 	def update_request(self, request:str) -> None:
-		self.check_request_value()
+		self.check_gameInfo_value()
 		self.request_value = self.request_class.convert_server_format(request=request)
 	
 	def update_human_message(self,message:str) -> None:
@@ -244,6 +248,10 @@ class Inform:
 		self.gameInfo_value[self.gameInfo_class.day] = day
 		self.gameInfo_value[self.gameInfo_class.existingRoleList] = exist_rolelist
 		self.gameInfo_value[self.gameInfo_class.statusMap] = status_map
+	
+	def update_role(self, role:str) -> None:
+		self.check_gameInfo_value()
+		self.gameInfo_value[self.gameInfo_class.role] = role
 	
 	def update_talk(self, daily_time_limit:int, connection_interval:int) -> None:
 		self.update_daily_time_limit(daily_time_limit=daily_time_limit)

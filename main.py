@@ -9,9 +9,8 @@ from lib import (
 )
 from werewolf import game_master
 from typing import Tuple
-import os
 import json
-import asyncio
+import os
 
 def gpu() -> None:
 	os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
@@ -68,8 +67,6 @@ def main():
 	# inform_game_setting
 	with concurrent.futures.ThreadPoolExecutor(max_workers=aiwolf_admin.player_num) as executor:
 		for player in player_list:
-			#future = executor.submit(aiwolf_admin.connection.set_time_out, player.socket, player.address, inifile.getfloat("game","non_blocking_time"))
-			#print(future.result())
 			future = executor.submit(aiwolf_admin.count_down, player)
 			#print(future.result())
 	
@@ -79,21 +76,20 @@ def main():
 		end_time = start_time + aiwolf_admin.daily_time_limit
 
 		with concurrent.futures.ThreadPoolExecutor(max_workers=aiwolf_admin.player_num) as executor:
-			# for player in player_list:
-			# 	future = executor.submit(aiwolf_admin.provide_talk_info, player)
-			# 	print(future.result())
+			for player in player_list:
+				future = executor.submit(aiwolf_admin.provide_talk_info, player)
+				print(future.result())
 			pass
 
 		while time.time() < end_time:
 
 			print("talk")
-			# with concurrent.futures.ThreadPoolExecutor(max_workers=aiwolf_admin.player_num) as executor:
-			# 	for player in player_list:
-			# 		future = executor.submit(aiwolf_admin.connection.receive, player.socket, player.address)
-			# 		if future.result() != None:
-			# 			agent_info = future.result()
-			# 			aiwolf_admin.convert_audio(player=player, agent_info=json.loads(agent_info))
-			break
+			with concurrent.futures.ThreadPoolExecutor(max_workers=aiwolf_admin.player_num) as executor:
+				for player in player_list:
+					future = executor.submit(aiwolf_admin.connection.receive, player.socket, player.address)
+					if future.result() != None:
+						agent_info = future.result()
+						aiwolf_admin.convert_audio(player=player, agent_info=json.loads(agent_info))
 		
 		print("vote")
 		with concurrent.futures.ThreadPoolExecutor(max_workers=aiwolf_admin.player_num) as executor:
@@ -106,9 +102,9 @@ def main():
 			futures = [executor.submit(aiwolf_admin.vote_inform, player, target) for player in player_list]
 			_ = [future.result() for future in concurrent.futures.as_completed(futures)]
 		
-		# if not aiwolf_admin.check_game_state():
-		# 	aiwolf_admin.game_continue = False
-		# 	break
+		if not aiwolf_admin.check_game_state():
+			aiwolf_admin.game_continue = False
+			break
 		
 		print("night")
 		with concurrent.futures.ThreadPoolExecutor(max_workers=aiwolf_admin.player_num) as executor:

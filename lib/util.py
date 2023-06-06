@@ -6,6 +6,7 @@ import datetime
 import time
 
 from werewolf import settings, game_master
+from werewolf.settings import Role
 
 def read_text(path:str):
     with open(path,"r",encoding="utf-8") as f:
@@ -52,17 +53,11 @@ def check_config(config_path:str) -> configparser.ConfigParser:
     
     return configparser.ConfigParser()
 
-def check_role(inifile:configparser.ConfigParser) -> list:
-    player_role = []
+def check_role(inifile:configparser.ConfigParser, role_list:list) -> None:
     player_num = inifile.getint("game","player_num")
-
-    for role in settings.role_list:
-        for _ in range(inifile.getint("game",role)): player_role.append(role)
     
-    if player_num != len(player_role):
-        raise ValueError(f"The number of players:{player_num} and the number of roles:{len(player_role)} are different in config.ini. ")
-    
-    return player_role
+    if player_num != len(role_list):
+        raise ValueError(f"The number of players:{player_num} and the number of roles:{len(role_list)} are different in config.ini. ")
 
 def check_max_thread(player_num:int) -> None:
     limit = min(32, (os.cpu_count() or 1) + 4)  # same as ThreadPoolExecutor init

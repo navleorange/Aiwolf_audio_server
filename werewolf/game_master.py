@@ -43,6 +43,7 @@ class GameMaster:
 
         # load
         self.all_role = {role:inifile.getint("game",role) for role in self.role_info.role_list if inifile.getint("game",role) != 0}
+        util.check_role(inifile=self.inifile, role_list=self.all_role)
         self.allocate_role_list = self.all_role.copy()
         self.all_role_ja = {self.role_info.translate_ja(role=role):self.all_role[role] for role in self.all_role.keys()}
 
@@ -115,13 +116,14 @@ class GameMaster:
 
         # reset inform info
         player.inform_info.reset_values()
+        player.inform_info.update_role(role=player.role)
 
         if player.human_flag:
             # set information
             player.inform_info.update_initialize(agent_index=player.index, day=self.day, exist_rolelist=list(self.all_role.keys()), status_map=util.get_status_map(self.player_map.keys(),alive_list=self.alive_list))
             player.inform_info.update_human_message(message=messages.inform_role.format(role=self.role_info.translate_ja(role=player.role)))
 
-            player.inform_info.update_request(request=player.inform_info.request_class.inform_check)
+            player.inform_info.update_request(request=player.inform_info.request_class.role)
 
             self.print_info(player=player)
             
@@ -149,11 +151,11 @@ class GameMaster:
         time.sleep(1)
 
         for past in range(self.count_down_time):
-            player.inform_info.update_human_message(message=str(self.count_down_time - past))
+            player.inform_info.update_human_message(message=str(self.count_down_time - past) + "\n")
             self.send_inform(player=player)
             time.sleep(1)
 
-        player.inform_info.update_human_message(message="スタート!")
+        player.inform_info.update_human_message(message="スタート!\n")
         self.send_inform(player=player)
 
     def provide_talk_info(self, player:Player) -> None:
