@@ -11,7 +11,6 @@ from .player import Player
 from .settings import Role
 from . import messages
 import numpy as np
-import pandas
 
 class GameMaster:
     def __init__(self, inifile:configparser.ConfigParser, server, seed:int) -> None:
@@ -337,8 +336,8 @@ class GameMaster:
             player.inform_info.update_request(request=player.inform_info.request_class.attack)
             role_message = messages.night + messages.attack_werewolf
         elif player.role == self.role_info.guard:
-            player.inform_info.update_target_index_list(target_index_list=self.get_attack_index(player=player))
-            player.inform_info.update_target_name_list(target_name_list=self.get_attack_name(player=player))
+            player.inform_info.update_target_index_list(target_index_list=self.get_divine_index(player=player))
+            player.inform_info.update_target_name_list(target_name_list=self.get_divine_name(player=player))
             role_message = messages.night + messages.guard_guard
             player.inform_info.update_request(request=player.inform_info.request_class.guard)
         else:
