@@ -70,6 +70,30 @@ def main():
 		start_time = time.time()
 		end_time = start_time + aiwolf_admin.daily_time_limit
 
+		if aiwolf_admin.day == 1:
+			# only day 1 night
+			print("first night")
+			with concurrent.futures.ThreadPoolExecutor(max_workers=aiwolf_admin.player_num) as executor:
+				futures = [executor.submit(aiwolf_admin.first_day_night, player) for player in player_list]
+				_ = [future.result() for future in concurrent.futures.as_completed(futures)]
+		else:
+			print("night")
+			with concurrent.futures.ThreadPoolExecutor(max_workers=aiwolf_admin.player_num) as executor:
+				futures = [executor.submit(aiwolf_admin.night_action, player) for player in player_list]
+				_ = [future.result() for future in concurrent.futures.as_completed(futures)]
+		
+		print("morning")
+		with concurrent.futures.ThreadPoolExecutor(max_workers=aiwolf_admin.player_num) as executor:
+			futures = [executor.submit(aiwolf_admin.morning_action, player) for player in player_list]
+			_ = [future.result() for future in concurrent.futures.as_completed(futures)]
+		
+		if aiwolf_admin.day != 1:
+			if not aiwolf_admin.check_game_continue():
+				aiwolf_admin.game_continue = False
+				break
+			
+		aiwolf_admin.day += 1
+
 		# with concurrent.futures.ThreadPoolExecutor(max_workers=aiwolf_admin.player_num) as executor:
 		# 	_ = [executor.submit(aiwolf_admin.connection.set_time_out, player.socket, player.address, aiwolf_admin.daily_time_limit) for player in player_list]
 		# 	futures = [executor.submit(aiwolf_admin.provide_talk_info, player) for player in player_list]
@@ -101,18 +125,6 @@ def main():
 		if not aiwolf_admin.check_game_continue():
 			aiwolf_admin.game_continue = False
 			break
-		
-		print("night")
-		with concurrent.futures.ThreadPoolExecutor(max_workers=aiwolf_admin.player_num) as executor:
-			futures = [executor.submit(aiwolf_admin.night_action, player) for player in player_list]
-			_ = [future.result() for future in concurrent.futures.as_completed(futures)]
-		
-		print("morning")
-		with concurrent.futures.ThreadPoolExecutor(max_workers=aiwolf_admin.player_num) as executor:
-			futures = [executor.submit(aiwolf_admin.morning_action, player) for player in player_list]
-			_ = [future.result() for future in concurrent.futures.as_completed(futures)]
-		
-		aiwolf_admin.update_game_state()
 
 	print("finish")
 	with concurrent.futures.ThreadPoolExecutor(max_workers=aiwolf_admin.player_num) as executor:
