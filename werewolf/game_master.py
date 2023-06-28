@@ -188,6 +188,10 @@ class GameMaster:
         self.send_inform(player=player)
     
     def convert_audio(self, player:Player) -> None:
+
+        if not player.alive:
+            return
+
         agent_info = self.receive_json(player=player)
 
         if agent_info == None:

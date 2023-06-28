@@ -13,7 +13,8 @@ import os
 
 def gpu() -> None:
 	os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-	os.environ["CUDA_VISIBLE_DEVICES"] = "5"
+	#os.environ["CUDA_VISIBLE_DEVICES"] = "5"
+	os.environ["CUDA_VISIBLE_DEVICES"] = "4,5"
 
 def game_prepare() -> game_master.GameMaster:
 	# read config.ini
