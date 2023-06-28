@@ -68,6 +68,7 @@ class GameMaster:
 
         new_player.set_name(agent_info["name"])
         new_player.set_human_flag(agent_info["human_flag"])
+        new_player.set_log()
 
         # thread safe
         with lock:
@@ -109,6 +110,15 @@ class GameMaster:
         
         return inform_role
     
+    def get_other_werewolf(self, player:Player) -> list:
+        buddy_list = []
+
+        for index in self.player_role.keys():
+            if self.player_role[index] == self.role_info.werewolf and index != player.index:
+                buddy_list.append(self.get_player_name(index=index))
+        
+        return ",".join(buddy_list)
+    
     def inform_game_setting(self, player:Player):
         # set info and send (human: inform game information, AI: initialize information)
 
@@ -133,7 +143,11 @@ class GameMaster:
         if player.human_flag:
             # set information
             player.inform_info.update_initialize(agent_index=player.index, day=self.day, exist_rolelist=list(self.all_role.keys()), status_map=util.get_status_map(self.player_map.keys(),alive_list=self.alive_list))
-            player.inform_info.update_human_message(message=messages.inform_role.format(role=self.role_info.translate_ja(role=player.role)))
+
+            if player.role != self.role_info.werewolf:
+                player.inform_info.update_human_message(message=messages.inform_role.format(role=self.role_info.translate_ja(role=player.role)))
+            else:
+                player.inform_info.update_human_message(message=messages.inform_role.format(role=self.role_info.translate_ja(role=player.role)) + messages.buddy_info.format(buddy_list=self.get_other_werewolf(player=player)) )
 
             player.inform_info.update_request(request=player.inform_info.request_class.role)
             
@@ -173,7 +187,14 @@ class GameMaster:
 
         self.send_inform(player=player)
     
-    def convert_audio(self, player:Player, agent_info) -> None:
+    def convert_audio(self, player:Player) -> None:
+        agent_info = self.receive_json(player=player)
+
+        if agent_info == None:
+            return
+        
+        print("receive!!!!!!!!")
+
         #print(agent_info["agent_info"]["audio"])
         voice = np.array(agent_info["agent_info"]["audio"]["voice"])
         results = player.whisper.transcribe(audio=voice)
@@ -187,7 +208,19 @@ class GameMaster:
         player.inform_info.update_human_message(message=message)
         player.inform_info.update_request(request=player.inform_info.request_class.inform)
 
+        # update log
+        player.write_log(message=message)
+        player.write_log(message=agent_info)
+
         self.send_inform(player=player)
+    
+    def check_talk_end(self,player:Player) -> None:
+        response = self.receive_json(player=player)
+
+        # throw out audio
+        while response["request"] != player.inform_info.request_class.convert_server_format(request=player.inform_info.request_class.talk_end):
+            # resend
+            response = self.receive_json(player=player)
 
     def get_player_role(self, index:int) -> str:
         return self.player_role[index]
@@ -260,6 +293,7 @@ class GameMaster:
         player.inform_info.update_request(request=player.inform_info.request_class.vote)
 
         # send
+        print("vote:" + str(player.index))
         response_name = self.conversation_inform(player=player)
 
         # throw out audio
@@ -314,10 +348,12 @@ class GameMaster:
 
         if target == player.name:
             # update information
-            self.alive_list.remove(player.index)
-            self.dead_list.append(player.index)
-            self.hanged_latest = player.index
 
+            if player.index in self.alive_list:
+                self.alive_list.remove(player.index)
+                self.dead_list.append(player.index)
+
+            self.hanged_latest = player.index
             player.dead()
     
     def unique_action(self, player:Player) -> None:
@@ -421,8 +457,9 @@ class GameMaster:
             _ = self.conversation_inform(player=player)
 
             # update information
-            self.alive_list.remove(self.attacked_latest)
-            self.dead_list.append(self.attacked_latest)
+            if self.attacked_latest in self.alive_list:
+                self.alive_list.remove(self.attacked_latest)
+                self.dead_list.append(self.attacked_latest)
 
             if player.role == self.role_info.medium:
                 role_message = messages.night + messages.psychic_medium.format(player_name=self.get_player_name(index=self.hanged_latest), psychic_result=self.get_psychic_result())
@@ -447,7 +484,7 @@ class GameMaster:
         for player in self.alive_list:
             player_role = self.get_player_role(index=player)
 
-            if player_role in self.role_info.werewolf_team:
+            if player_role in self.role_info.game_check_werewolf:
                 werewolf_team += 1
             
             if player_role == self.role_info.werewolf:
@@ -507,9 +544,29 @@ class GameMaster:
     def print_info(self, player:Player) -> None:
         player.inform_info.update_inform_format()
         print(json.dumps(player.inform_format,separators=(",",":")))
+    
+    def receive(self, player:Player) -> None:
+        receive = self.connection.receive(socket=player.socket, address=player.address)
+
+        received_list = receive.split("}\n{")
+
+        for index in range(len(received_list)):
+            received_list[index] = received_list[index].rstrip()
+
+            if received_list[index] == "":
+                continue
+
+            if received_list[index][0] != "{":
+                received_list[index] = "{" + received_list[index]
+
+            if received_list[index][-1] != "}":
+                received_list[index] += "}"
+            
+            player.add_receive(response=received_list[index])
 
     def receive_json(self, player:Player) -> None:
-        return json.loads(self.connection.receive(socket=player.socket, address=player.address))
+        self.receive(player=player)
+        return json.loads(player.get_receive())
     
     def get_message(self, response) -> str:
         return response["agent_info"]["message"]
@@ -518,5 +575,5 @@ class GameMaster:
         # update inform_fomat
         player.inform_info.update_inform_format()
 
-        # send and receive
-        return json.loads(self.connection.conversation(socket=player.socket, address=player.address, message=json.dumps(player.inform_format,separators=(",",":"))))
+        self.send_inform(player=player)
+        return self.receive_json(player=player)

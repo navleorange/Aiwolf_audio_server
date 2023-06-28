@@ -11,6 +11,9 @@ class Role():
 		# team
 		self.villager_team = [self.villager, self.seer, self.medium, self.guard]
 		self.werewolf_team = [self.werewolf, self.possessed]
+		
+		# game continue check team
+		self.game_check_werewolf = [self.werewolf, self.possessed]
 
 		# divine result
 		self.divine_villager = [self.villager, self.seer, self.medium, self.guard, self.possessed]
@@ -55,10 +58,11 @@ class Request:
 		self.base_info = "base_info"
 		self.time_sync = "time_sync"
 		self.convert_audio = "convert_audio"
+		self.talk_end = "talk_end"
 
 		# {key:self variable value:RandomTalkAgent send format}
 		self.convert_request = {self.initialize:"INITIALIZE",self.name:"NAME",self.role:"ROLE",self.daily_initialize:"DAILY_INITIALIZE",self.daily_finish:"DAILY_FINISH",self.talk:"TALK",self.vote:"VOTE",self.whisper:"WHISPER",self.finish:"FINISH",
-			  					self.inform:"INFORM", self.time_sync:"TIME_SYNCHRONIZE", self.base_info:"BASEINFO", self.inform_check:"INFORMCHECK",self.convert_audio:"CONVERTAUDIO",
+			  					self.inform:"INFORM", self.time_sync:"TIME_SYNCHRONIZE", self.base_info:"BASEINFO", self.inform_check:"INFORMCHECK",self.convert_audio:"CONVERTAUDIO",self.talk_end:"TALKEND",
 								self.attack:"ATTACK", self.divine:"DIVINE", self.divine_lie:"DIVINELIE", self.psychic:"PSYCHIC", self.guard:"GUARD"}
 
 		# RandomTalkAgent format (just init)

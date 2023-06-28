@@ -79,3 +79,7 @@ def get_status_map(player_index:list, alive_list:list) -> dict:
             result[index] = "DEAD"
     
     return result
+
+def check_directory(directory_path:str) -> None:
+    if not os.path.exists(directory_path):
+        os.mkdir(directory_path)

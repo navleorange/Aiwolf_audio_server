@@ -67,8 +67,6 @@ def main():
 	
 	# game loop
 	while aiwolf_admin.game_continue:
-		start_time = time.time()
-		end_time = start_time + aiwolf_admin.daily_time_limit
 
 		if aiwolf_admin.day == 1:
 			# only day 1 night
@@ -94,25 +92,41 @@ def main():
 			
 		aiwolf_admin.day += 1
 
-		# with concurrent.futures.ThreadPoolExecutor(max_workers=aiwolf_admin.player_num) as executor:
-		# 	_ = [executor.submit(aiwolf_admin.connection.set_time_out, player.socket, player.address, aiwolf_admin.daily_time_limit) for player in player_list]
-		# 	futures = [executor.submit(aiwolf_admin.provide_talk_info, player) for player in player_list]
-		# 	_ = [future.result() for future in concurrent.futures.as_completed(futures)]
+		print("count_down")
+		# inform_game_setting
+		with concurrent.futures.ThreadPoolExecutor(max_workers=aiwolf_admin.player_num) as executor:
+			futures = [executor.submit(aiwolf_admin.count_down, player) for player in player_list]
+			_ = [future.result() for future in concurrent.futures.as_completed(futures)]
+		
+		print("provide talk info")
+		with concurrent.futures.ThreadPoolExecutor(max_workers=aiwolf_admin.player_num) as executor:
+			futures = [executor.submit(aiwolf_admin.provide_talk_info, player) for player in player_list]
+			_ = [future.result() for future in concurrent.futures.as_completed(futures)]
 
-		while time.time() < end_time:
 
-			# print("talk")
-			# with concurrent.futures.ThreadPoolExecutor(max_workers=aiwolf_admin.player_num) as executor:
-			# 	for player in player_list:
-			# 		future = executor.submit(aiwolf_admin.connection.receive_time_out, player.socket, player.address)
-			# 		if future.result() != None:
-			# 			agent_info = future.result()
-			# 			aiwolf_admin.convert_audio(player=player, agent_info=json.loads(agent_info))
-			pass
+		talk_start_time = time.time()
+		talk_end_time = talk_start_time + aiwolf_admin.daily_time_limit		
+
+		while time.time() < talk_end_time:
+
+			print("reset timeout")
+			with concurrent.futures.ThreadPoolExecutor(max_workers=aiwolf_admin.player_num) as executor:
+				print("timeout:" + str(talk_end_time-time.time()))
+				_ = [executor.submit(aiwolf_admin.connection.set_time_out, player.socket, player.address, talk_end_time-time.time()) for player in player_list]
+
+			print("talk")
+			with concurrent.futures.ThreadPoolExecutor(max_workers=aiwolf_admin.player_num) as executor:
+				for player in player_list:
+					executor.submit(aiwolf_admin.convert_audio, player)
+		
+		print("talk end")
+		with concurrent.futures.ThreadPoolExecutor(max_workers=aiwolf_admin.player_num) as executor:
+			_ = [executor.submit(aiwolf_admin.connection.restore_time_out, player.socket, player.address) for player in player_list]
+			futures = [executor.submit(aiwolf_admin.check_talk_end, player) for player in player_list]
+			_ = [future.result() for future in concurrent.futures.as_completed(futures)]
 		
 		print("vote")
 		with concurrent.futures.ThreadPoolExecutor(max_workers=aiwolf_admin.player_num) as executor:
-			_ = [executor.submit(aiwolf_admin.connection.restore_time_out, player.socket, player.address) for player in player_list]
 			futures = [executor.submit(aiwolf_admin.vote, player, lock) for player in player_list]
 			_ = [future.result() for future in concurrent.futures.as_completed(futures)]
 

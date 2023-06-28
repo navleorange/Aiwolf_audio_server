@@ -8,11 +8,13 @@ inform_rule = """
 ゲーム開始時(初夜)の襲撃：なし
 """
 
-confirm = "確認したら「OK」ボタンを押してください。"
+confirm = "確認したら「OK」ボタンを押してください。\n"
 
 waiting_confirm = "他のプレイヤーの確認を待っています..."
 
 inform_role = "あなたの役職は「{role:s}」です。\n" + confirm
+
+buddy_info = "仲間は{buddy_list:s}です。"
 
 divine_seer = """
 占い師のあなたは1人を占うことができます。

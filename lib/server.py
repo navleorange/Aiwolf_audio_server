@@ -24,7 +24,6 @@ class TCP:
                 raise RuntimeError("socket connection broken")
             
             responses += response
-
         return responses.decode("utf-8")
     
     def receive_time_out(self, socket, address) -> str:
